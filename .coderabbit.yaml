@@ -28,8 +28,8 @@ reviews:
     enabled: true
     drafts: false                    # Draft PR은 리뷰하지 않음
     base_branches:                   # 기본 브랜치 외에 리뷰할 대상 브랜치 (Git 규칙: 작업 브랜치 → dev → main)
-      - "^dev$"
-      - "^main$"
+      - "dev"
+      - "main"
     ignore_title_keywords:
       - "WIP"
 
