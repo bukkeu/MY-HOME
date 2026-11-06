@@ -9,5 +9,4 @@ package com.wanted.moneybeetle.domain.auth.config;
 *   - formLogin 성공/실패 핸들러 연결, OAuth2 로그인(구글·카카오)
 *  */
 public class SecurityConfig {
-
 }
