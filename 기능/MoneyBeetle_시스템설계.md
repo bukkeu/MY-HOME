@@ -12,34 +12,34 @@
 
 ## 개요
 
-MoneyBeetle은 **React 화면(SPA) + REST API 서버 + MySQL** 구조로 설계합니다. 지금 페이지 구현본은 20개 화면이 각자 브라우저 localStorage에 목업 데이터를 저장하는 프로토타입이라, 이 저장과 판정을 모두 서버로 옮기는 것이 설계의 중심입니다.
+MoneyBeetle은 **Spring Boot MVC + Thymeleaf(서버가 화면을 만들어 응답) + MySQL** 구조로 설계합니다. 부트캠프에서 학습한 구조(Spring Web MVC · JPA · Spring Security 세션 로그인)를 그대로 따르고, 화면 안의 일부 동작(중복 확인, 알림 등)만 `/api/v1` JSON을 `fetch`로 호출합니다. 지금 페이지 구현본은 20개 화면이 각자 브라우저 localStorage에 목업 데이터를 저장하는 프로토타입이라, 이 저장과 판정을 모두 서버로 옮기고 화면은 Thymeleaf 템플릿으로 옮기는 것이 설계의 중심입니다.
 
 **기준 자료**: 페이지 구현본(사용자 12·강사 4·관리자 4개 화면과 ROUTES.md의 향후 URL)을 기준으로 하고, 규칙은 요구사항 명세서와 정책 정의서를 따릅니다. 구현본과 문서가 다른 부분은 마지막 절에 모았습니다.
 
-**기술 스택**: 화면은 구현본에서 확인한 것이고, 서버 쪽은 구현본에 없어 가정한 것입니다. 팀 스택이 다르면 해당 칸만 바꾸면 됩니다.
+**기술 스택**: 서버·화면 방식은 팀 프로젝트 골격(`moneybeetle/build.gradle`)과 학습 내용으로 **확정**된 것이고, 캐시·파일·배포는 가정입니다.
 
 | 영역 | 기술 | 근거 |
 | --- | --- | --- |
-| 화면 | React 19 + TypeScript + Vite, React Router | 구현본 화면이 React 컴포넌트이고, 모의투자 화면 코드가 이미 Vite + React 19 프로젝트임 (확인) |
-| 서버 | Java 17 + Spring Boot 3, Spring Security, Spring Data JPA | 가정. 권한 필터·트랜잭션·스케줄러를 기본 제공 |
-| DB | MySQL 8 | 가정. 캐시·거래·청약처럼 정합성이 중요한 데이터 |
+| 화면 | Thymeleaf(서버 렌더링) + HTML·CSS·JavaScript(`static/`) | 확정. 학습 구조(Spring Web MVC + Thymeleaf). 페이지 구현본(`.dc.html`)을 템플릿으로 옮김 |
+| 서버 | Java 21 + Spring Boot 3.5, Spring Web MVC, Spring Security, Spring Data JPA, Gradle | 확정 (`build.gradle`). 권한 필터·트랜잭션을 기본 제공 |
+| DB | MySQL 8 | 확정. 캐시·거래·청약처럼 정합성이 중요한 데이터 |
 | 캐시 | 서버 메모리(Caffeine) → 서버 2대 이상이면 Redis | 가정 |
 | 파일 | S3 호환 오브젝트 스토리지 | 구현본에 강의 영상·썸네일·단지 이미지 업로드가 있음 (확인) |
 | 배포 | GitHub Actions → Docker → 클라우드 서버 + Nginx | 가정. 학생 팀 규모에 맞는 단순한 구성 |
 
 **설계 원칙**
 
-1. **화면은 보여 주기만, 판정은 서버가**: 구현본은 레벨 해금·출석·가점·당첨을 브라우저에서 계산합니다. 실제 서비스에서는 모두 서버가 계산하고, 화면은 결과만 받습니다 (SP-24, SP-35, DP-14).
+1. **화면은 보여 주기만, 판정은 서버가**: 구현본은 레벨 해금·출석·가점·당첨을 브라우저에서 계산합니다. 실제 서비스에서는 모두 서버가 계산하고, 화면은 서버가 Model로 넘겨 준 결과만 보여 줍니다 (SP-24, SP-35, DP-14).
 2. **돈은 한 번에 함께 바뀜**: 캐시·경험치·자산이 바뀌는 작업은 하나의 트랜잭션으로 묶고, 같은 활동으로 두 번 지급하지 않습니다 (DP-40, SP-18).
-3. **설정값은 서버 한 곳에**: 구현본의 `mb-config.js`(레벨·칭호·해금·출석·청약 납입 값)는 서버 설정 테이블로 옮기고, 화면은 앱을 열 때 설정 API로 받아 씁니다. 관리자가 바꾸면 배포 없이 반영됩니다 (NFR-13).
+3. **설정값은 서버 한 곳에**: 구현본의 `mb-config.js`(레벨·칭호·해금·출석·청약 납입 값)는 서버 설정 테이블로 옮기고, 서버가 화면을 만들 때 Model로 넘겨 줍니다. 관리자가 바꾸면 배포 없이 반영됩니다 (NFR-13).
 4. **지난 것은 바뀜지 않음**: 지난 턴 가격, 체결된 거래, 지급 내역은 수정하지 않고 새 기록을 더하는 방식으로만 바꿉니다 (DP-41).
 
 ## 서비스 구조도
 
 ```mermaid
 flowchart LR
-    B["브라우저 (PC·모바일)<br/>React SPA · 화면 20개"] -- HTTPS --> N["Nginx<br/>HTTPS 인증서 · 화면 파일 제공<br/>/api → 서버 전달 · 요청 수 제한"]
-    N -- /api --> A["API 서버 (Spring Boot)<br/>인증·권한 필터 (세션)<br/>기능 모듈 13개<br/>메모리 캐시 (Caffeine)<br/>예약 작업"]
+    B["브라우저 (PC·모바일)<br/>Thymeleaf 화면 20개 · JS fetch"] -- HTTPS --> N["Nginx<br/>HTTPS 인증서 · 정적 파일 캐시<br/>요청을 서버로 전달 · 요청 수 제한"]
+    N -- 화면·/api --> A["웹 서버 (Spring Boot MVC)<br/>화면 렌더링 (Thymeleaf)<br/>인증·권한 필터 (세션)<br/>도메인 12개<br/>메모리 캐시 (Caffeine)<br/>예약 작업"]
     A -- JPA --> D[("MySQL<br/>회원·학습·캐시<br/>거래·청약·감사")]
     A -. 서버 증설 시 .-> R[("Redis<br/>세션·캐시 공유")]
     A -- 주소 서명 --> S["오브젝트 스토리지<br/>강의 영상·썸네일<br/>프로필·단지 이미지"]
@@ -50,39 +50,39 @@ flowchart LR
 
 강조 색: 판정을 내리는 유일한 곳 · 점선: 서버를 2대 이상으로 늘릴 때 추가
 
-브라우저의 모든 요청은 Nginx를 거쳐 API 서버로 가고, 캐시·가점·당첨을 바꾸는 것은 API 서버뿐입니다. 영상·이미지처럼 큰 파일만 예외로, API 서버가 서명해 준 주소로 브라우저가 스토리지에 직접 올립니다.
+브라우저의 모든 요청(화면 요청과 `/api` 요청)은 Nginx를 거쳐 Spring Boot 서버로 가고, 캐시·가점·당첨을 바꾸는 것은 이 서버뿐입니다. 서버가 화면(HTML)까지 만들어 응답합니다. 영상·이미지처럼 큰 파일만 예외로, 서버가 서명해 준 주소로 브라우저가 스토리지에 직접 올립니다.
 
 | 구성 요소 | 배치 | 역할 |
 | --- | --- | --- |
-| 클라이언트 | 사용자 브라우저 | React 화면. 데이터는 모두 `/api`로 받고 브라우저에는 화면 편의 설정만 저장 |
-| 웹서버 | 클라우드 서버 (Nginx 컨테이너) | HTTPS, React 빌드 파일 제공, `/api` 요청을 API 서버로 전달, 요청 수 제한 |
-| API 서버 | 같은 서버 (Spring Boot 컨테이너) | 인증·권한, 모든 업무 규칙, 메모리 캐시, 예약 작업(탈퇴 정보 정리, 만료 토큰 삭제) |
+| 클라이언트 | 사용자 브라우저 | 서버가 만든 HTML을 보여 줌. 일부 동작만 `/api`를 `fetch`로 호출하고 브라우저에는 화면 편의 설정만 저장 |
+| 리버스 프록시 | 클라우드 서버 (Nginx 컨테이너) | HTTPS, 정적 파일(`static/`) 캐시, 요청을 Spring Boot 서버로 전달, 요청 수 제한 |
+| 웹 서버 | 같은 서버 (Spring Boot 컨테이너) | 화면 렌더링(Thymeleaf), 인증·권한, 모든 업무 규칙, 메모리 캐시, 예약 작업(탈퇴 정보 정리, 만료 토큰 삭제) |
 | DB | 관리형 MySQL (또는 같은 서버의 컨테이너) | 모든 업무 데이터와 감사 기록. 매일 자동 백업 |
 | 스토리지 | S3 호환 오브젝트 스토리지 | 영상·썸네일·프로필·단지 이미지. 비공개 버킷에 두고 서명 주소로만 접근 |
-| 캐시 | API 서버 메모리 → 서버 증설 시 Redis | 오늘의 용어, 강의 목록, 현재 턴 시세, 설정값 (파일 업로드와 캐시 전략 절) |
+| 캐시 | 서버 메모리 → 서버 증설 시 Redis | 오늘의 용어, 강의 목록, 현재 턴 시세, 설정값 (파일 업로드와 캐시 전략 절) |
 | 외부 서비스 | 구글·카카오, 유튜브 | 간편 로그인(우선순위 하), URL로 등록한 강의 영상 재생 |
 
 ## 애플리케이션 모듈 구성
 
-화면은 역할별 주소(`/user`, `/instructor`, `/admin`)로, 서버는 기능 영역별 패키지로 나눕니다. 하나의 서버 안에 있지만 호출 방향을 정해 두면 팀원이 영역별로 나눠 개발해도 충돌이 적습니다.
+서버는 **도메인(기능 영역)별 패키지**로 나눕니다. 패키지 이름과 담당은 팀 프로젝트 골격(`moneybeetle/README.md`)을 따르고, 모든 도메인 안은 `controller` / `model/dao` / `model/dto` / `model/entity` / `model/service` / `exception`으로 같은 모양입니다. 화면은 역할별 주소(`/user`, `/instructor`, `/admin`)로 나뉘고, 관리자·강사용 Controller·Service도 해당 도메인 안에 둡니다(`AdminCourseController` 등). 코드 작성 규칙은 코딩 컨벤션 문서를 따릅니다.
 
-| 서버 패키지 | 맡는 일 | 쓰는 화면 | 호출하는 모듈 |
-| --- | --- | --- | --- |
-| `user` | 역할별 가입·로그인, 강사 승인 대기, 마이페이지, 탈퇴 | UserLogin·Signup, Instructor·Admin Login, UserMyPage | — |
-| `home` | 홈 조립(수강 이력 유무로 두 가지), 오늘의 경제 용어, 사이드바 프로필 | UserHome-vr1·vr2 | learning, growth |
-| `learning` | 카테고리·소주제·강의 조회, 영상 이어보기, 스크랩, 강의 Q&A | UserLectureCategory·Detail | file |
-| `quiz` | 테스트 퀴즈·퀴즈 채점, 오답노트 | UserLectureDetail, UserMyPage | learning, growth |
-| `growth` | 출석, 경험치, 레벨·칭호, 캐시 원장, 해금 판정 | 모든 사용자 화면 사이드바 | — |
-| `invest` | 모의투자 시즌·턴·주문·랭킹·정산 | UserDemoTrading, AdminTradingManagement | growth |
-| `subscription` | 청약통장 납입, 가점, 공고·신청·당첨 산정·발표 | UserDemoHousingSubscription, AdminHousingManagement | growth, file |
-| `board` | 사이트 문의 게시판(비공개 글 포함), 관리자 답변·숨김 | UserInquiry, AdminDashboard(?view=board) | — |
-| `search` | 강의·Q&A·게시판 통합 검색, 자동완성 | 모든 화면 상단 검색창, UserSearch | learning, board |
-| `notification` | 알림 생성·읽음 처리·알림 끄기 | 모든 화면의 종 버튼 | — |
-| `teacher` | 강의 생성(영상·요약글·퀴즈), 검수 요청, Q&A 답변 | InstructorDashboard·CourseCreate | learning, quiz, file |
-| `admin` | 백오피스 전체(검수, 용어, 회원·강사 승인, 시즌·단지 운영, 설정값) | Admin* | 모든 모듈 |
-| `common` | 인증, 예외 처리, 감사 로그, 금칙어 검사, 파일 저장(`file`), KST 시계 | — | (모든 모듈이 사용) |
+| 서버 패키지 | 맡는 일 | 쓰는 화면 | 담당 | 호출하는 모듈 |
+| --- | --- | --- | --- | --- |
+| `auth` | 로그인·로그아웃, 간편 로그인(OAuth2), 비밀번호 재설정 | UserLogin, Instructor·Admin Login | SCM | member |
+| `member` | 가입, 강사 가입·승인, 약관, 마이페이지, 탈퇴 | UserSignup, InstructorSignup, UserMyPage | SCM | growth(가입 시 청약통장 생성) |
+| `inquiry` | 사이트 문의 게시판(비공개 글 포함), 강의 Q&A, 관리자 답변·숨김 | UserInquiry, AdminDashboard(?view=board) | SCM | notification |
+| `operation` | 서비스 설정값, 관리자 작업 기록, 금칙어 | AdminDashboard(작업 기록) | SCM | — |
+| `course` | 카테고리·소주제·강의 조회, 영상 이어보기, 스크랩, 강사의 강의 생성·검수 요청, 관리자 검수 | UserLectureCategory·Detail, InstructorDashboard·CourseCreate, AdminDashboard | DBA ① | global.file |
+| `quiz` | 테스트 퀴즈·퀴즈 채점, 오답노트 | UserLectureDetail, UserMyPage | DBA ① | course, growth |
+| `growth` | 출석, 경험치, 레벨·칭호, 캐시 원장, 해금 판정 | 모든 사용자 화면 사이드바 | PM | — |
+| `home` | 홈 조립(수강 이력 유무로 두 가지), 통합 검색·자동완성 | UserHome-vr1·vr2, UserSearch | PM | course, growth, inquiry |
+| `term` | 오늘의 경제 용어, 용어 사전·날짜별 지정 | 홈의 경제단어 팝업, AdminDashboard(?view=terms) | PM | — |
+| `notification` | 알림 생성·읽음 처리·알림 끄기 | 모든 화면의 종 버튼 | PM | — |
+| `housing` | 청약통장 납입, 가점, 공고·신청·당첨 산정·발표 | UserDemoHousingSubscription, AdminHousingManagement | PM | growth, global.file |
+| `trading` | 모의투자 시즌·턴·주문·랭킹·정산 | UserDemoTrading, AdminTradingManagement | DBA ② | growth |
+| `global` | 설정(`config`), 공통 응답·예외(`common`, `exception`), 레벨 해금·중복 요청 방지(`security`), 파일 저장(`file`), KST 시계 | — | SCM | (모든 모듈이 사용) |
 
-핵심은 `growth`입니다. 캐시·경험치를 바꾸는 코드는 `growth`에만 두고, 퀴즈·모의투자·청약은 `growth`의 지급·차감 메서드를 불러서만 값을 바꿉니다. 알림은 다른 모듈이 이벤트(답변 등록, 턴 시작, 새 공고)를 발행하면 `notification`이 받아서 만듭니다. 그래서 각 모듈이 알림 코드를 직접 부르지 않습니다.
+핵심은 `growth`입니다. 캐시·경험치를 바꾸는 코드는 `growth`(`RewardService`)에만 두고, 퀴즈·모의투자·청약은 그 지급·차감 메서드를 불러서만 값을 바꿉니다. 다른 도메인의 Repository는 직접 쓰지 않고 그 도메인의 Service 메서드를 부릅니다. 알림은 `notification.NotificationService`, 관리자 작업 기록은 `operation.AdminLogService`가 맡아서 각 모듈이 알림·기록 코드를 직접 만들지 않습니다.
 
 **프로토타입 저장소 → 서버 전환**
 
@@ -90,14 +90,14 @@ flowchart LR
 
 | 지금 브라우저에 있는 것 | 옮길 곳 | 비고 |
 | --- | --- | --- |
-| `mb-role`, `mb-admin-session`, `mb-admin-login` | `user` (서버 세션) | 브라우저에 역할을 저장하면 누구나 바꿀 수 있어 반드시 제거 |
-| `mb-instructor-pending`, `mb-blocked-users` | `user` | 강사 승인 대기, 계정 정지 |
+| `mb-role`, `mb-admin-session`, `mb-admin-login` | `auth` (서버 세션) | 브라우저에 역할을 저장하면 누구나 바꿀 수 있어 반드시 제거 |
+| `mb-instructor-pending`, `mb-blocked-users` | `member` | 강사 승인 대기, 계정 정지 |
 | `mb-attendance`, `mb-attend-date`, `mb-admin-badges` | `growth` | 출석 판정은 서버 KST 기준 |
-| `mb-lecture-progress`, `mb-lecture-view`, `mb-my-qna` | `learning` | 이어보기 위치, 홈 분기(수강 이력 유무) |
-| `mb-course-draft` | `teacher` | 강의 작성 중 임시 저장 |
-| `mb-housing-v1` | `subscription` | 통장·공고·신청·결과. `housing/store.js`의 “API” 함수 안만 서버 호출로 바꾸면 됨 |
-| `mb-admin-ops-v1` | `invest`, `admin` | 시즌·턴 운영 |
-| `mb-inquiry-v1` | `board` | 사이트 문의 |
+| `mb-lecture-progress`, `mb-lecture-view`, `mb-my-qna` | `course`, `inquiry` | 이어보기 위치, 홈 분기(수강 이력 유무) |
+| `mb-course-draft` | `course` | 강의 작성 중 임시 저장 |
+| `mb-housing-v1` | `housing` | 통장·공고·신청·결과. `housing/store.js`의 “API” 함수 안만 서버 호출로 바꾸면 됨 |
+| `mb-admin-ops-v1` | `trading`, `operation` | 시즌·턴 운영 |
+| `mb-inquiry-v1` | `inquiry` | 사이트 문의 |
 | `mb-notify-read`, `mb-notify-extra` | `notification` | 알림과 읽음 여부 |
 | `mb-words-hide`, `mb-notify-mute` | 브라우저에 그대로 | 화면 편의 설정이라 서버가 몰라도 됨 |
 
@@ -137,7 +137,7 @@ flowchart LR
 
 ## 인증 및 보안 전략
 
-인증은 **같은 도메인 + 서버 세션 쿠키** 방식을 씁니다. Nginx가 React 빌드 파일과 `/api` 요청을 같은 주소에서 내보내므로 CORS 설정이 필요 없고, 토큰을 브라우저 저장소에 두지 않아 스크립트로 훔칠 수 없습니다. JWT는 나중에 모바일 앱이 생기면 추가합니다.
+인증은 학습한 **Spring Security 세션 로그인**을 씁니다. 서버가 화면과 `/api`를 같은 주소에서 내보내므로 CORS 설정이 필요 없고, 토큰을 브라우저 저장소에 두지 않아 스크립트로 훔칠 수 없습니다. JWT는 나중에 모바일 앱이 생기면 추가합니다. 로그인 요청(`POST`)은 Controller 메서드가 아니라 **Security 필터가 처리**하고, 우리는 회원 조회(`AuthService`)와 성공·실패 처리(`AuthSuccessHandler`·`AuthFailHandler`)를 끼워 넣습니다.
 
 지금 구현본은 로그인하면 `localStorage`에 `mb-role`·`mb-admin-session`을 적고 이 값으로 화면을 보여 줍니다. 브라우저 개발자 도구로 값을 바꾸면 관리자 화면이 열리므로, 서버 연동 때 가장 먼저 없애야 할 부분입니다.
 
@@ -145,20 +145,20 @@ flowchart LR
 
 | 항목 | 방식 | 관련 규칙 |
 | --- | --- | --- |
-| 로그인 입구 | 사용자 `/login`, 강사 `/instructor/login`, 관리자 `/admin/login`으로 화면은 나뉘지만 서버 API는 하나(`POST /api/auth/login`). 로그인 후 역할과 다른 입구로 들어오면 거절 | USR-06, USR-10 |
+| 로그인 입구 | 사용자 `/login`, 강사 `/instructor/login`, 관리자 `/admin/login`으로 화면은 나뉘지만 로그인 처리는 Security 하나. 로그인 후 역할과 다른 입구로 들어오면 거절 | USR-06, USR-10 |
 | 세션 쿠키 | 로그인 성공 시 세션 ID를 새로 발급(세션 고정 공격 방지). `HttpOnly`, `Secure`, `SameSite=Lax` | DP-11 |
-| 내 정보 조회 | 화면은 앱을 열 때 `GET /api/me`로 역할·레벨·캐시·설정값을 받아 사이드바와 잠금 표시에 씀. localStorage에 저장하지 않음 | HOM-04 |
-| 세션 만료 | 30분 미활동 시 만료. API가 401을 주면 화면이 현재 주소를 기억했다가 로그인 후 돌아감 | DP-11 |
+| 내 정보 조회 | 서버가 화면을 만들 때 역할·레벨·캐시·설정값을 Model(또는 Thymeleaf Security 확장 `sec:authorize`)로 템플릿에 넘겨 사이드바와 잠금 표시에 씀. localStorage에 저장하지 않음 | HOM-04 |
+| 세션 만료 | 30분 미활동 시 만료. 화면 요청은 로그인 화면으로 이동(302)하고 로그인 후 원래 주소로 돌아감, `/api` 요청은 401 | DP-11 |
 | 간편 로그인 | OAuth2(구글·카카오). 이메일·닉네임만 받고, 처음이면 나머지 가입 정보 입력 화면으로 | USR-07, DP-13 |
-| 강사 가입 | 강사 회원가입은 ‘승인 대기’ 상태로 만들고, 관리자가 승인해야 TEACHER 권한이 생김 (구현본 기준) | SP-07, ADM-06 |
-| 로그인 잠금 | 연속 5회 실패 시 10분 잠금. 실패 횟수는 이메일 단위로 캐시에 저장 | DP-10 |
+| 강사 가입 | 강사 회원가입은 ‘승인 대기’ 상태로 만들고, 관리자가 승인해야 INSTRUCTOR 권한이 생김 (구현본 기준) | SP-07, ADM-06 |
+| 로그인 잠금 | 연속 5회 실패 시 10분 잠금. 실패 횟수와 잠금 해제 시각은 회원 테이블(`failed_login_count`, `locked_until`)에 저장하고 실패 핸들러가 갱신. 잠금 검사는 비밀번호 검사보다 먼저 | DP-10 |
 | 비밀번호 저장 | BCrypt 해시. 평문 저장·로그 기록 금지 | DP-02 |
 | 비밀번호 찾기 | 일회용 토큰을 만들고 해시만 DB에 저장. 10분 유효, 한 번 쓰면 폐기. 구현본은 ‘준비 중’ | DP-12 |
 
 **권한 (인가)**
 
-- 역할은 `MEMBER`, `TEACHER`, `ADMIN`을 회원 테이블에 둡니다. 강사는 승인 상태(대기·승인·반려)도 함께 가집니다.
-- API 주소 단위로 막습니다: `/api/admin/**`는 ADMIN, `/api/instructor/**`는 승인된 TEACHER, `/api/invest/**`·`/api/subscription/**`는 로그인 + 레벨 조건.
+- 역할은 `MEMBER`, `INSTRUCTOR`, `ADMIN`을 회원 테이블에 둡니다. 강사는 승인 상태(대기·승인·반려)도 함께 가집니다.
+- 주소 단위로 막습니다(`SecurityConfig`): `/admin/**`·`/api/v1/admin/**`는 ADMIN, `/instructor/**`·`/api/v1/instructor/**`는 승인된 INSTRUCTOR, 모의투자·모의 청약은 로그인 + 레벨 조건(`@RequireLevel`). 권한 규칙은 위에서부터 검사하므로 좁은 규칙을 앞에 둡니다.
 - 화면의 블러·잠금 표시는 편의 기능일 뿐입니다. 레벨 해금은 서비스에서 DB 값으로 매번 확인합니다 (SP-24, NFR-09).
 - 본인 데이터(오답노트·캐시·거래·청약 내역)는 주소에 회원 ID를 받지 않고 세션의 회원 ID로만 조회합니다 (NFR-03).
 - 비공개 문의글과 강의 Q&A는 ‘작성자 또는 그 강의의 강사 또는 관리자’일 때만 내용을 돌려줍니다 (SP-40).
@@ -167,11 +167,11 @@ flowchart LR
 
 | 위협 | 대응 |
 | --- | --- |
-| CSRF (사용자 모르게 요청 보내기) | 세션 쿠키를 쓰므로 Spring Security CSRF 토큰을 쿠키로 내려주고, 화면이 모든 변경 요청 헤더에 담아 보냄 |
-| XSS (스크립트 삽입) | React 기본 이스케이프를 쓰고 `dangerouslySetInnerHTML` 금지. 요약글·문의처럼 사용자가 쓴 글은 서버에서도 허용 태그만 남김 |
+| CSRF (사용자 모르게 요청 보내기) | 세션 쿠키를 쓰므로 Spring Security CSRF 보호를 **켜 둠**. Thymeleaf 폼(`th:action`)은 토큰이 자동으로 들어가고, `fetch` 변경 요청은 헤더에 토큰을 담아 보냄. 로그아웃은 `POST`만 허용 |
+| XSS (스크립트 삽입) | Thymeleaf `th:text`(자동 이스케이프)를 쓰고 `th:utext` 금지. 요약글·문의처럼 사용자가 쓴 글은 서버에서도 허용 태그만 남김 |
 | SQL 인젝션 | JPA·파라미터 바인딩만 사용 |
 | 정답 노출 | 퀴즈를 보낼 때 정답·해설을 빼는 전용 응답 객체 사용 (SP-35) |
-| 중복 제출·연타 | 화면 버튼 비활성화 + 서버 요청 키 멱등 처리 (DP-37) |
+| 중복 제출·연타 | 화면 버튼 비활성화 + 서버 요청 키 멱등 처리 (DP-37), 등록·수정·삭제 뒤에는 redirect(PRG) |
 | 부적절한 표현 | 닉네임·문의·Q&A·강의 제목·요약글 저장 전 금칙어 검사 (DP-20~23) |
 | 파일 업로드 악용 | 파일 내용으로 형식 확인, 용량 제한, 파일명을 UUID로 바꿔 저장 (파일 업로드와 캐시 전략 절) |
 | 너무 많은 요청 | 로그인·가입·검색 자동완성에 IP당 요청 횟수 제한(Nginx `limit_req`) |
@@ -225,17 +225,16 @@ flowchart LR
 | 현재 턴의 종목 가격·뉴스 | 턴이 바뀔 때까지 | 다음 턴 진행 때 |
 | 공개된 시즌 랭킹 | 시즌 종료 후 고정 | 랭킹 공개 때 한 번 생성 |
 | 운영 설정값(지급액·해금 레벨 등) | 10분 | 관리자가 설정을 저장할 때 |
-| 로그인 실패 횟수 | 10분 | 로그인 성공 때 |
 
 서버가 한 대일 때는 서버 메모리 캐시(Caffeine)로 충분합니다. 서버를 2대 이상으로 늘리면 캐시와 세션을 함께 Redis로 옮겨야 서버끼리 값이 다르지 않습니다. 캐시 인터페이스(Spring Cache)를 쓰면 이때 코드를 거의 바꾸지 않아도 됩니다.
 
 ## 인프라 및 배포환경
 
-화면과 API 서버를 **Docker 이미지 하나씩** 만들어 클라우드 서버 한 대에서 Docker Compose로 띄웁니다. main에 병합되면 GitHub Actions가 자동으로 배포하고, 새 버전이 상태 확인을 통과하지 못하면 이전 버전이 계속 서비스됩니다.
+**Spring Boot 이미지 하나**(화면 템플릿·정적 파일 포함)를 만들어 Nginx, MySQL과 함께 클라우드 서버 한 대에서 Docker Compose로 띄웁니다. main에 병합되면 GitHub Actions가 자동으로 배포하고, 새 버전이 상태 확인을 통과하지 못하면 이전 버전이 계속 서비스됩니다.
 
 ```mermaid
 flowchart LR
-    PR["PR 올리기<br/>기능 브랜치 → main"] --> CI["CI 검사<br/>화면 빌드·서버 테스트"]
+    PR["PR 올리기<br/>기능 브랜치 → dev (배포는 dev → main)"] --> CI["CI 검사<br/>Gradle 빌드·테스트"]
     CI -- 실패하면 병합 불가 --> PR
     CI --> M["main 병합<br/>리뷰 1명 승인 후"] --> IMG["이미지 빌드<br/>Docker → GHCR 업로드"] --> DEP["서버 배포<br/>새 컨테이너 실행"] --> H{"상태 확인?"}
     H -- 통과 --> OK["배포 완료<br/>이전 컨테이너 종료"]
@@ -244,7 +243,7 @@ flowchart LR
     style RB fill:#FCEBEB,stroke:#E24B4A,stroke-width:2px
 ```
 
-저장소(github.com/bukkeu/MY-HOME)는 `frontend/`(React)와 `backend/`(Spring Boot) 두 폴더로 나누고, CI는 바뀐 폴더만 검사합니다. 지금 구현본의 `.dc.html` 화면은 ROUTES.md의 향후 URL대로 React 라우트로 옮깁니다.
+저장소(github.com/bukkeu/MY-HOME)는 `moneybeetle/`(Spring Boot 프로젝트: 서버 코드, `templates/`, `static/`), `기능/`(설계 문서), `moneybeetle-page/`(페이지 구현본, 참고용)로 나뉩니다. 구현본의 `.dc.html` 화면은 ROUTES.md의 향후 URL대로 `templates/` 아래 Thymeleaf 템플릿으로 옮기고, 공통 스크립트(`mb-*.js`)와 CSS는 `static/`으로 옮깁니다.
 
 **환경 구분**
 
@@ -260,20 +259,20 @@ flowchart LR
 - DB 주소·비밀번호, OAuth 키, 스토리지 키는 파일에 적지 않고 환경변수로만 넣습니다. 서버에는 `.env` 파일로, GitHub Actions에는 Secrets로 둡니다. `.env.example`만 저장소에 올립니다.
 - 서버·DB·컨테이너 시간대는 모두 `Asia/Seoul`로 맞춥니다 (DP-42).
 - DB 구조 변경은 Flyway 같은 마이그레이션 도구로 파일을 남기고 배포 때 자동 적용합니다. 팀원마다 DB가 달라지는 일을 막습니다.
-- 화면은 빌드 때 환경변수가 필요 없습니다. API를 같은 주소의 `/api`로 부르므로, 개발 중에는 Vite 프록시로 `/api`를 로컬 서버에 연결합니다.
+- 화면은 서버가 렌더링하므로 별도의 프런트 빌드·환경변수·프록시가 없습니다. `static/`과 `templates/` 파일은 Spring Boot 이미지에 함께 들어갑니다.
 
 ## 로깅·모니터링·에러 처리
 
-오류는 서버가 **한 가지 형식의 응답**으로 돌려주고, 화면은 그 형식만 보고 보여 줄 방법을 고릅니다. 정책서의 에러 문구는 서버가 코드와 함께 내려주어 화면마다 문구가 달라지지 않게 합니다.
+오류는 서버가 `BusinessException` + 도메인별 `ErrorCode`로 던지고, `GlobalExceptionHandler`가 **요청 종류에 따라** 바꿔 돌려줍니다. 화면 요청은 에러 화면(`templates/error/403·404·500.html`)이나 입력 폼의 안내 문구로, `/api` 요청은 `ApiResponse` JSON(`success`·`data`·`error`, API 명세서 1-2)으로 응답합니다. 정책서의 에러 문구는 서버가 코드와 함께 내려주어 화면마다 문구가 달라지지 않게 합니다.
 
 ```json
-{ "code": "CASH_NOT_ENOUGH", "message": "캐시가 부족해요", "field": null }
+{ "success": false, "data": null, "error": { "code": "NOT_ENOUGH_CASH", "message": "캐시가 부족해요", "fields": null } }
 ```
 
 | 오류 종류 (EP-01) | HTTP 상태 | 화면 표현 (EP-06) |
 | --- | --- | --- |
-| 입력 오류 (글자 수, 형식) | 400, `field`에 입력칸 이름 | 입력칸 아래 문구 |
-| 로그인 필요·세션 만료 | 401 | 로그인 화면으로, 로그인 후 원래 화면 |
+| 입력 오류 (글자 수, 형식) | 400, `error.fields`에 입력칸 이름 (`@Valid` 실패 메시지) | 입력칸 아래 문구 |
+| 로그인 필요·세션 만료 | 화면 302(로그인 화면), `/api` 401 | 로그인 화면으로, 로그인 후 원래 화면 |
 | 권한 없음·레벨 미달 | 403 (레벨이면 필요 레벨 포함) | 잠금 모달 또는 공통 오류 페이지 |
 | 규칙 위반 (캐시 부족, 신청 기간 밖, 휴장일) | 409 / 422 | 토스트 또는 모달로 이유와 다음 행동 |
 | 없는 데이터 | 404 | 공통 오류 페이지 + 홈 버튼 |
@@ -289,7 +288,7 @@ flowchart LR
 
 | 항목 | 페이지 구현본 | 명세서·정책서 | 설계에 미치는 영향 |
 | --- | --- | --- | --- |
-| 서버 기술 스택 | 없음(화면만) | 없음 | 이 문서는 Spring Boot·MySQL을 가정. 다르면 모듈·배포 절을 바꿈 |
+| 서버 기술 스택·화면 방식 | 없음(화면만) | 없음 | **확정**: Java 21 + Spring Boot 3.5 + Thymeleaf 서버 렌더링 + MySQL (학습 구조, `build.gradle`) |
 | 강의 영상 | 파일 업로드와 URL 둘 다 | 등록 방식 미정 | 파일을 허용하면 스토리지 비용·용량 상한·재생 방식을 정해야 함 |
 | 청약통장 납입액 | 1회 2만~50만, 인정 25만 | 1회 1,000캐시 (SP-70) | 필요 캐시 규모가 크게 달라짐. 캐시 지급액(SP-12~14)과 함께 맞춰야 함 |
 | 가점 항목 | 공고별로 68점·85점 두 가지 표, 인정금액·지역·나이 항목 포함 | 무주택·부양가족·통장 84점 (SP-71) | 가점표를 공고 유형별 설정으로 둘지 결정. 신청 때 항목별 점수를 저장하는 구조는 같음 |
@@ -302,7 +301,9 @@ flowchart LR
 
 ## 출처
 
-- 머니비틀 페이지 구현 (ROUTES.md, 화면 20개, `mb-config.js`, `housing/store.js`, `mb-notify.js`, `mb-search.js`, 모의투자 Vite 프로젝트)
+- 머니비틀 페이지 구현 (ROUTES.md, 화면 20개, `mb-config.js`, `housing/store.js`, `mb-notify.js`, `mb-search.js`, 모의투자 Vite 프로젝트, 참고용)
+- 팀 프로젝트 골격 (`moneybeetle/`: `README.md`, `build.gradle`, 패키지 구조)
+- 학습 노트 모듈 2 백엔드 (Spring Web MVC · JPA · Spring Security 세션 로그인)
 - MoneyBeetle 요구사항 명세서
 - MoneyBeetle 정책 정의서
 - MoneyBeetle 업무 분석

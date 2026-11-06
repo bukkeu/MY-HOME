@@ -4,7 +4,7 @@
 
 **읽는 법**
 
-- 팀: 2명, 한 저장소(FE + BE), GitHub Issues·PR로 관리
+- 팀: 여러 명(담당 SCM·DBA·PM), 한 저장소(FE + BE), GitHub Issues·PR로 관리
 - 요구사항 ID(USR-03 등)는 요구사항 명세서의 번호입니다.
 
 ---
@@ -45,7 +45,7 @@
 1. GitHub에서 **이슈를 만든다.**
 2. `dev`을 최신으로 받고 작업 브랜치를 만든다.
 3. 작업하고 커밋한다 (작게, 자주).
-4. push 후 **`dev`으로 PR**을 올리고 상대를 리뷰어로 지정한다.
+4. push 후 **`dev`으로 PR**을 올리고 팀원 1명을 리뷰어로 지정한다.
 5. 승인되면 **Squash and merge** 하고 브랜치를 삭제한다.
 6. 시연·제출 시점마다 **`dev` → `main` PR**을 올려 병합한다 (이때는 **Create a merge commit**).
 
@@ -90,7 +90,7 @@ git push -u origin feat/be-12-login-api
 | --- | --- |
 | 제목 | 커밋 제목과 같은 형식 (예: `feat(be): 로그인 API (#12)`) |
 | 크기 | 한 PR = 한 이슈. 대략 400줄 이하 |
-| 승인 | **상대방 1명 승인** 필수 (팀 2명 중 작성자를 뺀 1명). 본인 PR은 본인이 병합하지 않음 |
+| 승인 | **작성자를 뺀 팀원 1명의 승인** 필수. 본인 PR은 본인이 병합하지 않음 |
 | 병합 방식 | 작업 브랜치 → `dev`은 Squash and merge, `dev` → `main`은 Create a merge commit |
 | PR 대상 | 작업 브랜치는 `dev`으로 (`main`으로 바로 올리지 않음). `hotfix`만 `main` |
 | 리뷰 기한 | 24시간 안에 확인 (어려우면 댓글로 미리 알림) |
@@ -128,11 +128,11 @@ git push -u origin feat/be-12-login-api
 
 ## 5. FE·BE별 추가 규칙
 
-| 구분 | FE (React + TypeScript) | BE (Spring Boot) |
+| 구분 | FE (Thymeleaf 템플릿 · JavaScript) | BE (Spring Boot) |
 | --- | --- | --- |
-| 코드 스타일 | ESLint + Prettier | Google Java Style |
-| 네이밍 | 컴포넌트 PascalCase, 변수·함수 camelCase | 클래스 PascalCase, 패키지 소문자 |
-| PR 전 확인 | `npm run lint`, `npm run build` | `./gradlew test` |
+| 코드 스타일 | 들여쓰기 2칸(HTML·CSS·JS), 인라인 스크립트 대신 `static/js` 사용 | Google Java Style |
+| 네이밍 | 템플릿·정적 파일 소문자 kebab-case, JS 변수·함수 camelCase | 클래스 PascalCase, 패키지 소문자 |
+| PR 전 확인 | 서버를 띄워 화면이 열리는지 확인 (필요하면 스크린샷 첨부) | `./gradlew test` |
 
 ---
 

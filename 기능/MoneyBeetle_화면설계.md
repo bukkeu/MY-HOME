@@ -208,7 +208,7 @@ flowchart TD
 
 ## 3. 페이지 목록 및 라우트 정의
 
-현재 프로토타입은 `.dc.html` 파일 사이의 링크로 화면을 연결한다. 표의 논리 URL은 향후 실제 서비스 구현 시 사용할 경로이며, 현재 서버 라우터가 완성됐다는 뜻은 아니다.
+현재 프로토타입은 `.dc.html` 파일 사이의 링크로 화면을 연결한다. 표의 논리 URL은 실제 서비스에서 사용할 경로이며, 서비스에서는 각 화면을 **Spring MVC Controller가 받아 Thymeleaf 템플릿(`templates/`)으로 응답**한다(서버 렌더링). 아직 모든 Controller가 구현된 것은 아니다.
 
 | 구분 | 페이지 파일 | 논리 URL | 주요 목적 |
 | --- | --- | --- | --- |
@@ -975,48 +975,40 @@ flowchart TD
 
 ---
 
-## 10. 프론트엔드 컴포넌트 및 상태 구조
+## 10. 화면(템플릿) 구성 및 데이터 구조
 
-### 10.1 공통 컴포넌트 권장 구조
+화면은 Thymeleaf 서버 렌더링이다. Controller가 DTO를 `Model`에 담아 View 이름을 돌려주면 템플릿이 HTML을 만든다. 공통 영역(헤더·사이드바·알림)은 `fragments`로 나누어 모든 화면이 함께 쓴다.
+
+### 10.1 템플릿 구조
+
+팀 프로젝트(`moneybeetle/src/main/resources/templates`)의 구조를 따른다. 도메인별 폴더 아래에 화면 파일을 두고, 반복되는 영역은 `fragments`에 둔다.
 
 ```
-App
-├─ PublicLayout
-│  ├─ MainPage
-│  └─ AuthLayout
-│     ├─ UserLogin / UserSignup
-│     ├─ InstructorLogin / InstructorSignup
-│     └─ AdminLogin
-├─ UserLayout
-│  ├─ UserHeader
-│  ├─ UserDrawer
-│  ├─ GlobalSearch
-│  ├─ NotificationPanel
-│  ├─ DailyTermModal
-│  └─ Pages
-│     ├─ UserHomeFirstVisit
-│     ├─ UserHomeReturning
-│     ├─ LectureCategory
-│     ├─ LectureDetail
-│     ├─ MyPage
-│     ├─ InquiryBoard
-│     ├─ SearchResults
-│     ├─ DemoTrading
-│     └─ DemoHousing
-├─ InstructorLayout
-│  ├─ InstructorDrawer
-│  ├─ InstructorDashboard
-│  └─ CourseCreate
-└─ AdminLayout
-   ├─ AdminDrawer
-   ├─ AdminDashboard
-   ├─ TradingAdmin
-   └─ HousingAdmin
+templates
+├─ index.html                       Main (서비스 소개)
+├─ auth/            login-select · login · instructor-login · admin-login
+├─ member/          signup · instructor-signup · mypage
+├─ home/            home (UserHome-vr1·vr2) · search
+├─ course/          category · detail
+├─ inquiry/         inquiry
+├─ trading/         trading                  (UserDemoTrading)
+├─ housing/         housing                  (UserDemoHousingSubscription)
+├─ instructor/      dashboard · course-create
+├─ admin/           dashboard · trading · housing
+├─ error/           403 · 404 · 500
+└─ fragments/
+   ├─ layout/       header · sidebar · notice      (공통 헤더, Drawer 메뉴, 알림)
+   ├─ mypage/       settings · learning · growth   (마이페이지 탭)
+   └─ admin/        courses · members · growth     (관리자 대시보드 탭)
 ```
 
-### 10.2 프론트엔드 주요 데이터 상태
+- 정적 파일은 `static/css`, `static/js`, `static/images`에 둔다. 프로토타입의 `mb-*.js`(Drawer·알림·검색·사이드바)는 `static/js`로 옮긴다.
+- 마이페이지와 관리자 대시보드는 틀(템플릿)과 탭 내용(fragment)을 나누어, 탭마다 담당자가 따로 수정할 수 있다.
+- 사용자·강사·관리자 화면의 공통 헤더·Drawer는 같은 fragment를 쓰고 역할에 따라 메뉴만 달라진다(`sec:authorize`).
 
-| 데이터 | 사용 화면 | 주요 상태 |
+### 10.2 화면에 전달되는 주요 데이터 (Model)
+
+| 데이터 | 사용 화면 | 서버가 넘기는 주요 값 |
 | --- | --- | --- |
 | 사용자 계정 | 로그인, 홈, 마이페이지, 투자/청약 | userId, 닉네임, 이메일, 가입일, 역할, 계정 상태 |
 | 성장 정보 | 홈, 마이페이지, 트레이닝 | XP, 레벨, 칭호, 연속 출석, 배지, 캐시 |
@@ -1032,33 +1024,9 @@ App
 | 모의청약 | 사용자·관리자 청약 화면 | 단지, 공고, 청약통장, 납입, 신청, 자격 스냅샷, 가점, 가상 경쟁자, 결과 |
 | 작업 기록 | 관리자 | 관리자 ID, 작업 종류, 대상 ID, 변경 전/후, 처리 시각, 사유 |
 
-### 10.3 API 설계 예측
+### 10.3 화면과 API
 
-아래 API는 화면 요구사항을 바탕으로 한 **백엔드 설계 제안**이며, 현재 ZIP에 API 서버가 구현되어 있다는 의미는 아니다. 실제 API 방식(REST/GraphQL), 인증 방식, 페이징 규칙은 백엔드 설계 단계에서 확정한다.
-
-| 리소스 | 예시 API | 주요 목적 |
-| --- | --- | --- |
-| 인증 | `POST /api/auth/login`, `POST /api/auth/signup`, `POST /api/auth/logout`, `GET /api/me` | 로그인, 가입, 세션, 내 정보 |
-| 강사 권한 | `POST /api/instructor/applications`, `PATCH /api/admin/users/{id}/role` | 강사 가입 신청 및 관리자 권한 승인 |
-| 강의 분류 | `GET /api/categories`, `POST /api/admin/categories`, `PATCH /api/admin/categories/{id}` | 카테고리 및 소주제 조회/관리 |
-| 강의 목록 | `GET /api/lectures?category=&subtopic=&q=&view=` | 카테고리별 강의 목록 및 검색 |
-| 강의 상세 | `GET /api/lectures/{lectureId}` | 강의 기본 정보, 영상, 요약, 목차 |
-| 강의 검수 | `POST /api/instructor/lectures`, `PATCH /api/instructor/lectures/{id}`, `POST /api/admin/lectures/{id}/approve`, `POST /api/admin/lectures/{id}/reject` | 강의 등록·수정·검수 |
-| 학습 기록 | `GET /api/me/learning`, `PUT /api/me/lectures/{id}/progress`, `POST /api/me/lectures/{id}/complete` | 재생 위치·시청·완료 기록 |
-| 퀴즈 | `GET /api/lectures/{id}/quizzes`, `POST /api/quizzes/{id}/attempts` | 퀴즈 제공 및 채점 결과 저장 |
-| 오답노트/스크랩 | `GET /api/me/wrong-answers`, `POST /api/me/scraps`, `DELETE /api/me/scraps/{id}` | 오답과 스크랩 조회/관리 |
-| Q&A | `GET /api/lectures/{id}/questions`, `POST /api/lectures/{id}/questions`, `POST /api/questions/{id}/answers` | 강의별 질문 및 강사 답변 |
-| 문의 게시판 | `GET /api/inquiries`, `POST /api/inquiries`, `POST /api/inquiries/{id}/comments`, `PATCH /api/admin/inquiries/{id}` | 일반 문의, 댓글, 관리자 처리 |
-| 통합 검색 | `GET /api/search?q=&type=` | 강의·Q&A·게시판 검색 결과 통합 제공 |
-| 경제 용어 | `GET /api/daily-terms`, `GET/POST/PATCH /api/admin/terms` | 날짜별 용어 및 용어 사전 관리 |
-| 성장/캐시 | `GET /api/me/wallet`, `GET /api/me/xp`, `POST /api/admin/users/{id}/cash-adjustments` | 캐시·XP 조회, 관리자 수동 조정 |
-| 출석 | `POST /api/me/attendance`, `GET /api/me/attendance` | 출석 및 연속 출석 관리 |
-| 알림 | `GET /api/me/notifications`, `PATCH /api/me/notifications/{id}/read` | 알림 목록·읽음 처리 |
-| 모의투자 | `/api/investment/seasons`, `/api/investment/stocks`, `/api/investment/orders`, `/api/investment/rankings` | 시즌·종목·시세·주문·랭킹 |
-| 모의투자 운영 | `/api/admin/investment/seasons`, `/api/admin/investment/turns`, `/api/admin/investment/prices`, `/api/admin/investment/news` | 시즌·턴·가격·뉴스 관리 |
-| 모의청약 | `/api/housing/notices`, `/api/housing/calendar`, `/api/housing/accounts`, `/api/housing/applications` | 공고·일정·청약통장·신청 |
-| 모의청약 운영 | `/api/admin/housing/notices`, `/api/admin/housing/applications`, `/api/admin/housing/results` | 공고·신청 조회·결과 산정/발표 |
-| 관리자 로그 | `GET /api/admin/audit-logs` | 주요 운영 작업 이력 |
+화면 안에서 JavaScript(`fetch`)가 부르는 JSON API는 **API 명세서**(`/api/v1/**`)를 따른다. 화면 이동과 폼 제출은 Controller가 처리하고, 쓰기 요청 뒤에는 redirect(PRG)로 화면을 다시 불러온다. 이 문서에 있던 API 예측 목록은 API 명세서로 대체되었다.
 
 ### 10.4 백엔드에서 보장해야 하는 핵심 관계
 
