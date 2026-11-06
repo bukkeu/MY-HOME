@@ -1,0 +1,4 @@
+-- comment.
+--   담당 : DBA ②
+--   CREATE TABLE : trading_season, season_turn, sector, stock, stock_price, news, news_tag, trade_reason, season_participant, holding, trade_order, ranking_award
+--   기준 : MoneyBeetle_DB설계.md / moneybeetle.sql (번호 순서대로 실행 - FK 때문에 01 이 먼저)

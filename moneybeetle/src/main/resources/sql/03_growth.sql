@@ -1,0 +1,4 @@
+-- comment.
+--   담당 : DBA ② (작성 요청 : PM)
+--   CREATE TABLE : attendance, notification, level_policy, reward_rule, cash_history, exp_history, economic_term, term_schedule, subscription_account, subscription_deposit, housing_complex, housing_application
+--   기준 : MoneyBeetle_DB설계.md / moneybeetle.sql (번호 순서대로 실행 - FK 때문에 01 이 먼저)

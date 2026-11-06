@@ -1,0 +1,4 @@
+-- comment.
+--   담당 : DBA ① (작성 요청 : SCM)
+--   CREATE TABLE : member, instructor_profile, social_account, terms, member_terms_agreement, password_reset_token, system_setting, admin_log, forbidden_word, inquiry, inquiry_reply
+--   기준 : MoneyBeetle_DB설계.md / moneybeetle.sql (번호 순서대로 실행 - FK 때문에 01 이 먼저)

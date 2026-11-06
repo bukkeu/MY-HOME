@@ -1,0 +1,3 @@
+-- comment.
+--   담당 : DBA ① / DBA ②
+--   moneybeetle 데이터베이스와 계정 생성 (CREATE DATABASE, CREATE USER, GRANT)
