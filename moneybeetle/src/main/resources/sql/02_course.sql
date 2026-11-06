@@ -1,4 +1,0 @@
--- comment.
---   담당 : DBA ①
---   CREATE TABLE : category, course, course_review, lesson, quiz_question, quiz_choice, quiz_attempt, quiz_answer, wrong_answer_note, learning_progress, lesson_watch, scrap
---   기준 : MoneyBeetle_DB설계.md / moneybeetle.sql (번호 순서대로 실행 - FK 때문에 01 이 먼저)

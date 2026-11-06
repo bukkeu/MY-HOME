@@ -1,3 +1,6 @@
--- comment.
---   담당 : DBA ① / DBA ②
---   moneybeetle 데이터베이스와 계정 생성 (CREATE DATABASE, CREATE USER, GRANT)
+CREATE DATABASE IF NOT EXISTS money_beetle
+    DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+SHOW DATABASES;
+GRANT ALL PRIVILEGES ON money_beetle.* TO 'wanted'@'%';
+
+SHOW GRANTS FOR 'wanted'@'%';
