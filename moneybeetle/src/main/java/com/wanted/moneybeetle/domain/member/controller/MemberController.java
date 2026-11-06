@@ -22,6 +22,9 @@ public class MemberController {
     public ModelAndView test(ModelAndView mv) {
         System.out.println("dd");
         System.out.println("dd");
+        System.out.println("dd");
+        System.out.println("dd");
+        System.out.println("dd");
 
         return mv;
     }
