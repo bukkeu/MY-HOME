@@ -3565,6 +3565,7 @@ Header: Idempotency-Key: 31aa...
 | 공통 | `LEVEL_LOCKED` | 403 | Lv.8부터 열려요. 지금은 Lv.5예요 |
 | 공통 | `NOT_FOUND` | 404 | 찾을 수 없는 페이지예요 |
 | 공통 | `DUPLICATE_REQUEST` | 409 | (기존 처리 결과를 그대로 반환) |
+| 공통 | `IDEMPOTENCY_KEY_CONFLICT` | 409 | 같은 요청 번호로 내용이 다른 요청을 보냈어요. 새로 시도해 주세요 |
 | 공통 | `FORBIDDEN_WORD` | 400 | 사용할 수 없는 표현이 들어 있어요 |
 | 공통 | `INTERNAL_ERROR` | 500 | 처리하지 못했어요. 내 정보는 바뀌지 않았어요 |
 | 회원 | `LOGIN_FAILED` | 401 | 이메일 또는 비밀번호를 확인해 주세요 |
