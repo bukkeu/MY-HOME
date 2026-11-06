@@ -635,7 +635,7 @@ class Component extends DCLogic {
     if (!H) return { loading: true, skeleton: [1, 2, 3, 4], tabs: [], sidebarOpen: s.sidebarOpen };
     const db = H.get(), T = H.TODAY, user = db.user, acc = db.account;
     const level = Math.max(1, Math.min(20, this.props.level ?? 14));
-    const house = level <= 3 ? '텐트' : level <= 7 ? '원룸' : level <= 11 ? '투룸' : level <= 16 ? '아파트' : '내 집';
+    const house = level <= 3 ? '고시원' : level <= 7 ? '원룸' : level <= 11 ? '투룸' : level <= 16 ? '아파트' : '내 집';
     const locked = level < 12, vm = H.virtualMarital(level);
     const fmt = n => Number(n || 0).toLocaleString('ko-KR');
     const pd = d => new Date(d + 'T00:00:00');

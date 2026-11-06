@@ -300,7 +300,7 @@ class Component extends DCLogic {
   renderVals() { const __v = this.__rv(); const l = Number(__v.level) || 1; __v.houseBg = l >= 17 ? '#F2C14E' : l >= 12 ? '#9fe870' : l >= 4 ? '#B9EF8E' : '#EAF7D8'; return __v; }
   __rv() {
     const p = this.props, level = p.level ?? 4, invReq = p.invReq ?? 8, subReq = p.subReq ?? 12;
-    const house = level <= 3 ? '텐트' : level <= 7 ? '원룸' : level <= 11 ? '투룸' : level <= 16 ? '아파트' : '내 집';
+    const house = level <= 3 ? '고시원' : level <= 7 ? '원룸' : level <= 11 ? '투룸' : level <= 16 ? '아파트' : '내 집';
     const streak = this.state.streak ?? (p.streak ?? 4), s = this.state;
     const tog = k => () => this.setState(x => ({ [k]: !x[k] }));
     const caret = v => (v ? '▲' : '▼');

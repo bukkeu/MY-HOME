@@ -148,7 +148,7 @@ class Component extends DCLogic {
       { n: '1', t: '맛보기 퀴즈', d: '가볍게 풀어 보고 시작해요', x: 180, y: 120, icon: I.quiz, bg: '#E4F6D2', gl: '배우기', at: 0.08 },
       { n: '2', t: '영상 + 요약', d: '짧은 영상과 핵심 요약으로 배워요', x: 500, y: 120, icon: I.video, bg: '#D2F2B3', at: 0.2 },
       { n: '3', t: '마무리 퀴즈', d: '통과하면 캐시가 쌓여요', x: 820, y: 120, icon: I.done, bg: '#B9EF8E', at: 0.32 },
-      { n: '4', t: '레벨업', d: '텐트에서 원룸, 투룸으로', x: 680, y: 380, icon: I.up, bg: '#9fe870', gl: '성장하기', at: 0.52 },
+      { n: '4', t: '레벨업', d: '고시원에서 원룸, 투룸으로', x: 680, y: 380, icon: I.up, bg: '#9fe870', gl: '성장하기', at: 0.52 },
       { n: '5', t: 'Lv.8 모의 투자', d: '가상 캐시로 주식 투자 연습', x: 320, y: 380, icon: I.chart, bg: '#9fe870', at: 0.64 },
       { n: '6', t: 'Lv.12 모의 청약', d: '청약통장 모으고 분양에 도전', x: 320, y: 640, icon: I.apt, bg: '#9fe870', gl: '도전하기', at: 0.84 },
       { n: '', t: '내 집', d: '드디어 내 집 마련 완료!', x: 750, y: 640, home: true, bg: '#F2C14E', at: 1 }
@@ -169,7 +169,7 @@ class Component extends DCLogic {
       roadRef: this.roadRef, wide: !narrow, narrow, stations, rows,
       dash: on ? 0 : 1, lineH: on ? '100%' : '0%', drawDur: reduce ? '0s' : total + 's',
       steps: [
-      { name: '텐트', lv: 'Lv.1~3', h: '150px', bg: '#EAF7D8', fg: '#263B1A', sub: '#4a6b2e' },
+      { name: '고시원', lv: 'Lv.1~3', h: '150px', bg: '#EAF7D8', fg: '#263B1A', sub: '#4a6b2e' },
       { name: '원룸', lv: 'Lv.4~7', h: '200px', bg: '#B9EF8E', fg: '#263B1A', sub: '#3d6120' },
       { name: '투룸', lv: 'Lv.8~11 · 모의투자 열림', h: '250px', bg: '#B9EF8E', fg: '#263B1A', sub: '#263B1A' },
       { name: '아파트', lv: 'Lv.12~16 · 모의 청약 열림', h: '300px', bg: '#9fe870', fg: '#263B1A', sub: '#263B1A' },

@@ -2,7 +2,7 @@
 (function () {
   window.MB_CONFIG = window.MB_CONFIG || {
     level: { xpPerLevel: 150, maxLevel: 20 },
-    tiers: [ { from: 1, name: '텐트' }, { from: 4, name: '원룸' }, { from: 8, name: '투룸' }, { from: 12, name: '아파트' }, { from: 17, name: '내 집' } ],
+    tiers: [ { from: 1, name: '고시원' }, { from: 4, name: '원룸' }, { from: 8, name: '투룸' }, { from: 12, name: '아파트' }, { from: 17, name: '내 집' } ],
     unlock: { demoTrading: 8, demoHousing: 12 },
     attendance: { bonusFromStreak: 5, bonusCash: 1000, timezone: 'Asia/Seoul' },
     // 청약통장 납입 — 미확정: 정책 정의서 SP-70 초안은 1회 1,000캐시, 현재 구현은 아래 값

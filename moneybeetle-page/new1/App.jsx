@@ -886,7 +886,7 @@ function App({ admin }) {
     showToast(selectedStock.name + ' ' + o.quantity + '주를 ' + (o.type === 'buy' ? '샀어요' : '팔았어요'));
   };
   const joinSeason = () => { setSeason('active'); showToast('시즌 7에 참가했어요. 투자 가능 금액이 확정됐어요'); };
-  const house = level <= 3 ? '텐트' : level <= 7 ? '원룸' : level <= 11 ? '투룸' : level <= 16 ? '아파트' : '내 집';
+  const house = level <= 3 ? '고시원' : level <= 7 ? '원룸' : level <= 11 ? '투룸' : level <= 16 ? '아파트' : '내 집';
   const gate = level < 8 ? (
     <StateScreen title="모의투자는 Lv.8부터 열려요" desc={'지금은 Lv.' + level + ' ' + house + '예요. 강의를 완료하고 경험치를 모아 보세요. 주소를 직접 입력해도 들어올 수 없어요.'}><a className="primary-button" href="UserHome-vr2.dc.html">홈으로 가기</a></StateScreen>
   ) : season === 'none' ? (
