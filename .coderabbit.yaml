@@ -3,6 +3,7 @@
 # 기술 스택: Java 21 · Spring Boot 3.5 · MySQL 8 · JPA · Thymeleaf · Spring Security 6(세션 로그인)
 # 저장소 구조: moneybeetle/(Spring 서버) · moneybeetle-page/(HTML 프로토타입) · 기능/(명세 문서)
 # 리뷰 초점: 역할과 책임 분리, 도메인 분리, 캐시·자산 정합성, 유지보수성
+# 수정...했어
 
 language: "ko-KR"
 tone_instructions: "리뷰 대상은 Java·Spring(JPA, Security, Thymeleaf)을 배우는 부트캠프 수강생입니다. 쉬운 한국어로 왜 문제인지와 고친 코드 예시를 함께 보여 주세요. 전문 용어는 한글(영어)로 병기하고, 지금 필요 없는 과한 추상화는 제안하지 마세요."
